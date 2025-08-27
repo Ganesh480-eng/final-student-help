@@ -1,89 +1,21 @@
 // Global variables
 let currentUser = null;
-let studyMaterials = [
-    {
-        id: 1,
-        title: "Introduction to Computer Science",
-        course: "Computer Science",
-        year: "2024",
-        semester: "1",
-        fileType: "pdf",
-        fileName: "intro_cs_2024.pdf",
-        description: "Basic concepts and fundamentals of computer science",
-        uploadDate: "2024-01-15",
-        size: "2.5 MB"
-    },
-    {
-        id: 2,
-        title: "Advanced Mathematics Notes",
-        course: "Mathematics",
-        year: "2024",
-        semester: "1",
-        fileType: "docx",
-        fileName: "advanced_math_notes.docx",
-        description: "Comprehensive notes on calculus and linear algebra",
-        uploadDate: "2024-01-20",
-        size: "1.8 MB"
-    },
-    {
-        id: 3,
-        title: "Physics Lab Manual",
-        course: "Physics",
-        year: "2023",
-        semester: "2",
-        fileType: "pdf",
-        fileName: "physics_lab_manual.pdf",
-        description: "Laboratory experiments and procedures",
-        uploadDate: "2023-12-10",
-        size: "3.2 MB"
-    },
-    {
-        id: 4,
-        title: "Chemistry Formulas",
-        course: "Chemistry",
-        year: "2023",
-        semester: "2",
-        fileType: "ppt",
-        fileName: "chemistry_formulas.pptx",
-        description: "Important chemical formulas and reactions",
-        uploadDate: "2023-12-05",
-        size: "4.1 MB"
-    },
-    {
-        id: 5,
-        title: "Data Structures and Algorithms",
-        course: "Computer Science",
-        year: "2024",
-        semester: "2",
-        fileType: "pdf",
-        fileName: "data_structures_algorithms.pdf",
-        description: "Complete guide to data structures and algorithms",
-        uploadDate: "2024-02-01",
-        size: "5.7 MB"
-    },
-    {
-        id: 6,
-        title: "Organic Chemistry Notes",
-        course: "Chemistry",
-        year: "2024",
-        semester: "1",
-        fileType: "docx",
-        fileName: "organic_chemistry_notes.docx",
-        description: "Detailed notes on organic chemistry concepts",
-        uploadDate: "2024-01-25",
-        size: "2.9 MB"
-    }
-];
+let authToken = localStorage.getItem('authToken');
+const API_BASE_URL = 'http://localhost:3000/api';
 
 // DOM Elements
-const loginSection = document.getElementById('loginSection');
+const homepageSection = document.getElementById('homepageSection');
 const dashboardSection = document.getElementById('dashboardSection');
+const loginModal = document.getElementById('loginModal');
+const registerModal = document.getElementById('registerModal');
 const loginForm = document.getElementById('loginForm');
+const registerForm = document.getElementById('registerForm');
 const logoutBtn = document.getElementById('logoutBtn');
 const userDisplay = document.getElementById('userDisplay');
 const menuItems = document.querySelectorAll('.menu-item');
 const contentSections = document.querySelectorAll('.content-section');
 const materialsGrid = document.getElementById('materialsGrid');
+const publicMaterialsGrid = document.getElementById('publicMaterialsGrid');
 const uploadForm = document.getElementById('uploadForm');
 const fileUploadArea = document.getElementById('fileUploadArea');
 const fileUpload = document.getElementById('fileUpload');
@@ -91,97 +23,160 @@ const filePreview = document.getElementById('filePreview');
 const totalMaterials = document.getElementById('totalMaterials');
 const lastLogin = document.getElementById('lastLogin');
 
+// Navigation buttons
+const loginBtn = document.getElementById('loginBtn');
+const registerBtn = document.getElementById('registerBtn');
+const promptLoginBtn = document.getElementById('promptLoginBtn');
+const closeLoginModal = document.getElementById('closeLoginModal');
+const closeRegisterModal = document.getElementById('closeRegisterModal');
+const showRegisterBtn = document.getElementById('showRegisterBtn');
+const showLoginBtn = document.getElementById('showLoginBtn');
+
+// Filter elements
+const courseFilter = document.getElementById('courseFilter');
+const yearFilter = document.getElementById('yearFilter');
+const semesterFilter = document.getElementById('semesterFilter');
+const publicCourseFilter = document.getElementById('publicCourseFilter');
+const publicYearFilter = document.getElementById('publicYearFilter');
+const publicSemesterFilter = document.getElementById('publicSemesterFilter');
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
+    setupEventListeners();
+    setupFormBindings();
+    restoreSession();
+    loadPublicMaterials();
 });
+
+function restoreSession() {
+    authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+        currentUser = null;
+        localStorage.removeItem('currentUser');
+        showHomepage();
+        return;
+    }
+
+    // try to validate token by fetching profile
+    fetch(`${API_BASE_URL}/profile`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+    })
+    .then(async res => {
+        if (!res.ok) {
+            // invalid token — clear session
+            authToken = null;
+            currentUser = null;
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            showHomepage();
+            return;
+        }
+        const profile = await res.json();
+        currentUser = profile;
+        localStorage.setItem('currentUser', JSON.stringify(profile));
+        showDashboard();
+        // load data for logged-in user
+        loadUserMaterials();
+        updateStats();
+        loadPublicMaterials();
+    })
+    .catch(err => {
+        console.error('Session restore failed:', err);
+        authToken = null;
+        currentUser = null;
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('currentUser');
+        showHomepage();
+    });
+}
 
 function initializeApp() {
     // Check if user is already logged in
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-        currentUser = JSON.parse(savedUser);
+    if (authToken) {
+        currentUser = JSON.parse(localStorage.getItem('currentUser'));
         showDashboard();
+        loadUserMaterials();
+        updateStats();
+    } else {
+        showHomepage();
     }
+}
 
-    // Event listeners
-    loginForm.addEventListener('submit', handleLogin);
-    logoutBtn.addEventListener('click', handleLogout);
+function setupEventListeners() {
+    // Navigation
+    loginBtn?.addEventListener('click', () => showModal(loginModal));
+    registerBtn?.addEventListener('click', () => showModal(registerModal));
+    promptLoginBtn?.addEventListener('click', () => showModal(loginModal));
+    
+    // Modal controls
+    closeLoginModal?.addEventListener('click', () => hideModal(loginModal));
+    closeRegisterModal?.addEventListener('click', () => hideModal(registerModal));
+    showRegisterBtn?.addEventListener('click', () => {
+        hideModal(loginModal);
+        showModal(registerModal);
+    });
+    showLoginBtn?.addEventListener('click', () => {
+        hideModal(registerModal);
+        showModal(loginModal);
+    });
+    
+    // Close modals when clicking outside
+    loginModal?.addEventListener('click', (e) => {
+        if (e.target === loginModal) hideModal(loginModal);
+    });
+    registerModal?.addEventListener('click', (e) => {
+        if (e.target === registerModal) hideModal(registerModal);
+    });
+    
+    // Forms
+    loginForm?.addEventListener('submit', handleLogin);
+    registerForm?.addEventListener('submit', handleRegister);
+    logoutBtn?.addEventListener('click', handleLogout);
+    uploadForm?.addEventListener('submit', handleFileUpload);
     
     // Menu navigation
-    menuItems.forEach(item => {
+    menuItems?.forEach(item => {
         item.addEventListener('click', () => {
             const section = item.getAttribute('data-section');
             switchSection(section);
         });
     });
 
-    // File upload functionality
-    setupFileUpload();
+    // File upload
+    fileUploadArea?.addEventListener('click', () => fileUpload.click());
+    fileUpload?.addEventListener('change', handleFileSelect);
+    fileUploadArea?.addEventListener('dragover', handleDragOver);
+    fileUploadArea?.addEventListener('drop', handleDrop);
     
-    // Upload form submission
-    uploadForm.addEventListener('submit', handleFileUpload);
-    
-    // Filter functionality
-    setupFilters();
-    
-    // Load initial data
-    loadStudyMaterials();
-    updateStats();
+    // Filters
+    courseFilter?.addEventListener('change', loadUserMaterials);
+    yearFilter?.addEventListener('change', loadUserMaterials);
+    semesterFilter?.addEventListener('change', loadUserMaterials);
+    publicCourseFilter?.addEventListener('change', loadPublicMaterials);
+    publicYearFilter?.addEventListener('change', loadPublicMaterials);
+    publicSemesterFilter?.addEventListener('change', loadPublicMaterials);
 }
 
-// Login functionality
-function handleLogin(e) {
-    e.preventDefault();
-    
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    
-    // Demo authentication (in real app, this would be server-side)
-    if (username === 'student123' && password === 'password123') {
-        currentUser = {
-            username: username,
-            name: 'John Doe',
-            studentId: 'STU2024001',
-            email: 'john.doe@university.edu',
-            course: 'Computer Science',
-            year: '2024'
-        };
-        
-        // Save user to localStorage
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        
-        showNotification('Login successful!', 'success');
-        showDashboard();
-    } else {
-        showNotification('Invalid credentials. Please try again.', 'error');
-    }
+// Modal functions
+function showModal(modal) {
+    modal.classList.add('active');
 }
 
-// Logout functionality
-function handleLogout() {
-    currentUser = null;
-    localStorage.removeItem('currentUser');
-    showLogin();
-    showNotification('Logged out successfully', 'info');
+function hideModal(modal) {
+    modal.classList.remove('active');
 }
 
-// Show dashboard
-function showDashboard() {
-    loginSection.classList.remove('active');
-    dashboardSection.classList.add('active');
-    userDisplay.textContent = `Welcome, ${currentUser.name}!`;
-    updateStats();
-}
-
-// Show login
-function showLogin() {
+// Section management
+function showHomepage() {
+    homepageSection.classList.add('active');
     dashboardSection.classList.remove('active');
-    loginSection.classList.add('active');
-    loginForm.reset();
 }
 
-// Switch between content sections
+function showDashboard() {
+    homepageSection.classList.remove('active');
+    dashboardSection.classList.add('active');
+}
+
 function switchSection(sectionName) {
     // Update menu items
     menuItems.forEach(item => {
@@ -194,307 +189,411 @@ function switchSection(sectionName) {
     // Update content sections
     contentSections.forEach(section => {
         section.classList.remove('active');
-        if (section.id === `${sectionName}Section`) {
+        if (section.id === sectionName + 'Section') {
             section.classList.add('active');
         }
     });
 }
 
-// Load study materials
-function loadStudyMaterials(filteredMaterials = null) {
-    const materials = filteredMaterials || studyMaterials;
+// API helper function
+async function apiRequest(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const config = {
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        },
+        ...options
+    };
     
-    materialsGrid.innerHTML = '';
+    if (authToken) {
+        config.headers.Authorization = `Bearer ${authToken}`;
+    }
     
-    if (materials.length === 0) {
-        materialsGrid.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">
-                <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; color: #ccc;"></i>
-                <h3>No materials found</h3>
-                <p>Try adjusting your filters or upload new materials.</p>
+    try {
+        const response = await fetch(url, config);
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Request failed');
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('API Error:', error);
+        showNotification(error.message, 'error');
+        throw error;
+    }
+}
+
+// Authentication functions
+async function handleLogin(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    
+    try {
+        const data = await apiRequest('/login', {
+            method: 'POST',
+            body: JSON.stringify({ username, password })
+        });
+        
+        authToken = data.token;
+        currentUser = data.user;
+        
+        localStorage.setItem('authToken', authToken);
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        
+        hideModal(loginModal);
+        showDashboard();
+        loadUserMaterials();
+        updateStats();
+        
+        showNotification('Login successful!', 'success');
+    } catch (error) {
+        showNotification('Login failed. Please check your credentials.', 'error');
+    }
+}
+
+async function handleRegister(e) {
+    e.preventDefault();
+    
+    const formData = {
+        username: document.getElementById('regUsername').value,
+        password: document.getElementById('regPassword').value,
+        name: document.getElementById('regName').value,
+        studentId: document.getElementById('regStudentId').value,
+        email: document.getElementById('regEmail').value,
+        course: document.getElementById('regCourse').value,
+        year: document.getElementById('regYear').value
+    };
+    
+    try {
+        await apiRequest('/register', {
+            method: 'POST',
+            body: JSON.stringify(formData)
+        });
+        
+        hideModal(registerModal);
+        showModal(loginModal);
+        showNotification('Registration successful! Please login.', 'success');
+    } catch (error) {
+        showNotification('Registration failed. Please try again.', 'error');
+    }
+}
+
+function handleLogout() {
+    authToken = null;
+    currentUser = null;
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('currentUser');
+    
+    showHomepage();
+    showNotification('Logged out successfully', 'success');
+}
+
+// Material loading functions
+async function loadPublicMaterials() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/public/materials`);
+        if (!res.ok) throw new Error('Failed to load public materials');
+        const materials = await res.json();
+        displayPublicMaterials(materials);
+    } catch (err) {
+        console.error(err);
+        showNotification('Could not load public materials', 'error');
+    }
+}
+
+async function loadUserMaterials() {
+    try {
+        const course = courseFilter?.value || '';
+        const year = yearFilter?.value || '';
+        const semester = semesterFilter?.value || '';
+        
+        const params = new URLSearchParams();
+        if (course) params.append('course', course);
+        if (year) params.append('year', year);
+        if (semester) params.append('semester', semester);
+        
+        const materials = await apiRequest(`/materials?${params}`);
+        displayMaterials(materials);
+    } catch (error) {
+        console.error('Error loading user materials:', error);
+    }
+}
+
+function displayPublicMaterials(materials) {
+    const grid = publicMaterialsGrid || materialsGrid; // Use public grid first
+    if (!grid) return;
+
+    grid.innerHTML = ''; // Clear previous content
+    if (!materials || !materials.length) {
+        grid.innerHTML = '<p>No materials have been uploaded yet.</p>';
+        return;
+    }
+
+    materials.forEach(m => {
+        const card = document.createElement('div');
+        card.className = 'material-card';
+        // Ensure data-id and data-filename are present on the button
+        card.innerHTML = `
+            <div class="material-icon">${m.filetype || 'file'}</div>
+            <h3>${m.title || 'Untitled'}</h3>
+            <p>Course: ${m.course || 'N/A'}</p>
+            <p>Year: ${m.year || 'N/A'}, Sem: ${m.semester || 'N/A'}</p>
+            <p>Size: ${m.size || 'Unknown'}</p>
+            <div class="material-actions">
+                <button class="download-btn" data-id="${m.id}" data-filename="${m.filename || m.title || 'download'}">
+                    <i class="fas fa-download"></i> Download
+                </button>
             </div>
         `;
+        grid.appendChild(card);
+    });
+
+    // After rendering all cards, attach the click handlers
+    attachPublicDownloadHandlers(grid);
+}
+
+function displayMaterials(materials) {
+    if (!materialsGrid) return;
+    
+    if (materials.length === 0) {
+        materialsGrid.innerHTML = '<div class="no-materials">No materials found</div>';
         return;
     }
     
-    materials.forEach(material => {
-        const materialCard = createMaterialCard(material);
-        materialsGrid.appendChild(materialCard);
-    });
-}
-
-// Create material card
-function createMaterialCard(material) {
-    const card = document.createElement('div');
-    card.className = 'material-card';
-    
-    const iconClass = getFileIcon(material.fileType);
-    const iconColor = getFileColor(material.fileType);
-    
-    card.innerHTML = `
-        <div class="material-header">
-            <div class="material-icon" style="background: ${iconColor};">
-                <i class="${iconClass}"></i>
+    materialsGrid.innerHTML = materials.map(material => `
+        <div class="material-card">
+            <div class="material-icon">
+                <i class="fas fa-file-${getFileIcon(material.fileType)}"></i>
             </div>
             <div class="material-info">
                 <h3>${material.title}</h3>
-                <p>${material.fileName}</p>
+                <p class="material-meta">
+                    <span><i class="fas fa-graduation-cap"></i> ${material.course}</span>
+                    <span><i class="fas fa-calendar"></i> ${material.year} - Semester ${material.semester}</span>
+                </p>
+                <p class="material-description">${material.description || 'No description available'}</p>
+                <div class="material-footer">
+                    <span class="file-size"><i class="fas fa-weight-hanging"></i> ${material.size}</span>
+                    <span class="upload-date"><i class="fas fa-clock"></i> ${formatDate(material.uploadDate)}</span>
+                </div>
+            </div>
+            <div class="material-actions">
+                <button class="action-btn download-btn" onclick="downloadMaterial(${material.id})">
+                    <i class="fas fa-download"></i>
+                    Download
+                </button>
             </div>
         </div>
-        <div class="material-details">
-            <p><i class="fas fa-graduation-cap"></i> ${material.course}</p>
-            <p><i class="fas fa-calendar"></i> Year ${material.year}, Semester ${material.semester}</p>
-            <p><i class="fas fa-clock"></i> Uploaded: ${formatDate(material.uploadDate)}</p>
-            <p><i class="fas fa-file"></i> Size: ${material.size}</p>
-            ${material.description ? `<p><i class="fas fa-info-circle"></i> ${material.description}</p>` : ''}
-        </div>
-        <div class="material-actions">
-            <button class="action-btn download-btn" onclick="downloadMaterial(${material.id})">
-                <i class="fas fa-download"></i> Download
-            </button>
-            <button class="action-btn view-btn" onclick="viewMaterial(${material.id})">
-                <i class="fas fa-eye"></i> View
-            </button>
-        </div>
-    `;
-    
-    return card;
+    `).join('');
 }
 
-// Get file icon based on file type
-function getFileIcon(fileType) {
-    const icons = {
-        'pdf': 'fas fa-file-pdf',
-        'doc': 'fas fa-file-word',
-        'docx': 'fas fa-file-word',
-        'ppt': 'fas fa-file-powerpoint',
-        'pptx': 'fas fa-file-powerpoint',
-        'txt': 'fas fa-file-alt'
-    };
-    return icons[fileType] || 'fas fa-file';
-}
-
-// Get file color based on file type
-function getFileColor(fileType) {
-    const colors = {
-        'pdf': '#dc3545',
-        'doc': '#007bff',
-        'docx': '#007bff',
-        'ppt': '#fd7e14',
-        'pptx': '#fd7e14',
-        'txt': '#6c757d'
-    };
-    return colors[fileType] || '#6c757d';
-}
-
-// Format date
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
-}
-
-// Setup file upload functionality
-function setupFileUpload() {
-    // Drag and drop functionality
-    fileUploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        fileUploadArea.style.borderColor = '#667eea';
-        fileUploadArea.style.background = '#e9ecef';
-    });
-    
-    fileUploadArea.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        fileUploadArea.style.borderColor = '#667eea';
-        fileUploadArea.style.background = '#f8f9fa';
-    });
-    
-    fileUploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        fileUploadArea.style.borderColor = '#667eea';
-        fileUploadArea.style.background = '#f8f9fa';
-        
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            fileUpload.files = files;
-            showFilePreview(files[0]);
-        }
-    });
-    
-    // File input change
-    fileUpload.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            showFilePreview(e.target.files[0]);
-        }
-    });
-}
-
-// Show file preview
-function showFilePreview(file) {
-    const fileType = file.name.split('.').pop().toLowerCase();
-    const iconClass = getFileIcon(fileType);
-    const iconColor = getFileColor(fileType);
-    
-    filePreview.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <div style="width: 40px; height: 40px; border-radius: 8px; background: ${iconColor}; display: flex; align-items: center; justify-content: center; color: white;">
-                <i class="${iconClass}"></i>
-            </div>
-            <div>
-                <strong>${file.name}</strong>
-                <br>
-                <small>${(file.size / 1024 / 1024).toFixed(2)} MB</small>
-            </div>
-        </div>
-    `;
-    filePreview.classList.add('show');
-}
-
-// Handle file upload
-function handleFileUpload(e) {
+// File upload functions
+async function handleFileUpload(e) {
     e.preventDefault();
     
-    const courseName = document.getElementById('courseName').value;
-    const year = document.getElementById('year').value;
-    const semester = document.getElementById('semester').value;
-    const description = document.getElementById('description').value;
+    const formData = new FormData();
     const file = fileUpload.files[0];
     
     if (!file) {
-        showNotification('Please select a file to upload', 'error');
+        showNotification('Please select a file', 'error');
         return;
     }
     
-    // Simulate upload process
-    const uploadBtn = document.querySelector('.upload-btn');
-    const originalText = uploadBtn.innerHTML;
-    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-    uploadBtn.disabled = true;
+    formData.append('file', file);
+    formData.append('courseName', document.getElementById('courseName').value);
+    formData.append('year', document.getElementById('year').value);
+    formData.append('semester', document.getElementById('semester').value);
+    formData.append('description', document.getElementById('description').value);
     
-    setTimeout(() => {
-        // Create new material
-        const newMaterial = {
-            id: studyMaterials.length + 1,
-            title: file.name.replace(/\.[^/.]+$/, ""),
-            course: courseName,
-            year: year,
-            semester: semester,
-            fileType: file.name.split('.').pop().toLowerCase(),
-            fileName: file.name,
-            description: description,
-            uploadDate: new Date().toISOString().split('T')[0],
-            size: `${(file.size / 1024 / 1024).toFixed(1)} MB`
-        };
+    try {
+        const response = await fetch(`${API_BASE_URL}/upload`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: formData
+        });
         
-        studyMaterials.unshift(newMaterial);
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Upload failed');
+        }
+        
+        const result = await response.json();
+        showNotification('File uploaded successfully!', 'success');
         
         // Reset form
         uploadForm.reset();
-        filePreview.classList.remove('show');
+        filePreview.innerHTML = '';
         
-        // Update display
-        loadStudyMaterials();
+        // Reload materials
+        loadUserMaterials();
+        loadPublicMaterials(); // Also reload public materials
         updateStats();
-        
-        // Reset button
-        uploadBtn.innerHTML = originalText;
-        uploadBtn.disabled = false;
-        
-        showNotification('File uploaded successfully!', 'success');
-        
-        // Switch to materials section
-        switchSection('materials');
-    }, 2000);
+    } catch (error) {
+        showNotification('Upload failed: ' + error.message, 'error');
+    }
 }
 
-// Setup filters
-function setupFilters() {
-    const courseFilter = document.getElementById('courseFilter');
-    const yearFilter = document.getElementById('yearFilter');
-    const semesterFilter = document.getElementById('semesterFilter');
+function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        displayFilePreview(file);
+    }
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    fileUploadArea.classList.add('dragover');
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    fileUploadArea.classList.remove('dragover');
     
-    [courseFilter, yearFilter, semesterFilter].forEach(filter => {
-        filter.addEventListener('change', applyFilters);
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        fileUpload.files = files;
+        displayFilePreview(files[0]);
+    }
+}
+
+function displayFilePreview(file) {
+    filePreview.innerHTML = `
+        <div class="file-preview-item">
+            <i class="fas fa-file-${getFileIcon(file.name.split('.').pop())}"></i>
+            <span>${file.name}</span>
+            <span class="file-size">(${(file.size / 1024 / 1024).toFixed(1)} MB)</span>
+        </div>
+    `;
+}
+
+// Robust download helper: tries direct anchor (browser handles Content-Disposition) and falls back to fetch+blob.
+// Works for public downloads (no auth) and authenticated downloads (when authToken present).
+async function downloadMaterial(id, fallbackName = 'file') {
+    if (!id) { showNotification('Invalid file id', 'error'); return; }
+
+    // API_BASE_URL is "http://localhost:3000/api"
+    const publicEndpoint = API_BASE_URL.replace(/\/api$/, '') + `/api/public/download/${id}`;
+    const authEndpoint = `${API_BASE_URL}/download/${id}`;
+    const endpoint = authToken ? authEndpoint : publicEndpoint;
+
+    // 1) Try simple anchor click (lets browser save file using Content-Disposition)
+    try {
+        const a = document.createElement('a');
+        a.href = endpoint;
+        a.target = '_self';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return;
+    } catch (err) {
+        console.warn('Anchor download failed, falling back to fetch:', err);
+    }
+
+    // 2) Fallback: fetch blob and trigger client download
+    try {
+        const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
+        const res = await fetch(endpoint, { headers });
+        if (!res.ok) {
+            const json = await res.json().catch(()=>null);
+            showNotification(json?.error || 'Download failed', 'error');
+            return;
+        }
+
+        const blob = await res.blob();
+        let filename = fallbackName;
+        const cd = res.headers.get('content-disposition');
+        if (cd) {
+            const m = cd.match(/filename\*?=(?:UTF-8'')?"?([^";\r\n]+)"?/);
+            if (m && m[1]) filename = decodeURIComponent(m[1]);
+        }
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error('downloadMaterial error', err);
+        showNotification('Download error', 'error');
+    }
+}
+
+// Attach click listeners to all download buttons (call this after rendering materials)
+function attachPublicDownloadHandlers(root = document) {
+    const buttons = root.querySelectorAll('.download-btn[data-id]');
+    buttons.forEach(btn => {
+        // Avoid attaching multiple listeners to the same button
+        if (btn.dataset._downloadBound) return;
+        btn.dataset._downloadBound = '1';
+
+        btn.addEventListener('click', () => {
+            const id = btn.dataset.id;
+            const name = btn.dataset.filename || 'file';
+            downloadMaterial(id, name); // This calls the download function from the previous step
+        });
     });
 }
 
-// Apply filters
-function applyFilters() {
-    const courseFilter = document.getElementById('courseFilter').value;
-    const yearFilter = document.getElementById('yearFilter').value;
-    const semesterFilter = document.getElementById('semesterFilter').value;
-    
-    let filteredMaterials = studyMaterials;
-    
-    if (courseFilter) {
-        filteredMaterials = filteredMaterials.filter(material => material.course === courseFilter);
-    }
-    
-    if (yearFilter) {
-        filteredMaterials = filteredMaterials.filter(material => material.year === yearFilter);
-    }
-    
-    if (semesterFilter) {
-        filteredMaterials = filteredMaterials.filter(material => material.semester === semesterFilter);
-    }
-    
-    loadStudyMaterials(filteredMaterials);
-}
-
-// Update statistics
-function updateStats() {
-    totalMaterials.textContent = studyMaterials.length;
-    lastLogin.textContent = new Date().toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-}
-
-// Download material (simulated)
-function downloadMaterial(materialId) {
-    const material = studyMaterials.find(m => m.id === materialId);
-    if (material) {
-        showNotification(`Downloading ${material.fileName}...`, 'info');
-        
-        // Simulate download
-        setTimeout(() => {
-            showNotification(`${material.fileName} downloaded successfully!`, 'success');
-        }, 1500);
+// Called when app initializes or after login/register
+async function loadProfile() {
+    if (!authToken) return;
+    try {
+        const res = await fetch(`${API_BASE_URL}/profile`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch profile');
+        const profile = await res.json();
+        currentUser = profile;
+        localStorage.setItem('currentUser', JSON.stringify(profile));
+        // Render profileSection content (simple inline render)
+        const profileSection = document.getElementById('profileSection');
+        if (profileSection) {
+            profileSection.innerHTML = `
+                <h2>My Profile</h2>
+                <p><strong>Name:</strong> ${profile.name}</p>
+                <p><strong>Username:</strong> ${profile.username || ''}</p>
+                <p><strong>Email:</strong> ${profile.email}</p>
+                <p><strong>Course:</strong> ${profile.course}</p>
+                <p><strong>Year:</strong> ${profile.year}</p>
+                <p><strong>Student ID:</strong> ${profile.studentId}</p>
+            `;
+        }
+        if (userDisplay) userDisplay.textContent = `Welcome, ${profile.name}`;
+    } catch (err) {
+        console.error(err);
     }
 }
 
-// View material (simulated)
-function viewMaterial(materialId) {
-    const material = studyMaterials.find(m => m.id === materialId);
-    if (material) {
-        showNotification(`Opening ${material.fileName}...`, 'info');
-        
-        // Simulate opening file
-        setTimeout(() => {
-            showNotification(`${material.fileName} opened in new tab`, 'success');
-        }, 1000);
+// Initialize binding for forms (add to existing initialization sequence)
+function setupFormBindings() {
+    if (loginForm) loginForm.addEventListener('submit', handleLogin);
+    if (uploadForm) uploadForm.addEventListener('submit', handleFileUpload);
+    if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+    if (registerForm) registerForm.addEventListener('submit', handleRegister);
+}
+
+// ensure initialization calls
+document.addEventListener('DOMContentLoaded', () => {
+    // existing initializeApp logic should call these; if not call here:
+    setupFormBindings();
+    if (authToken) {
+        try { currentUser = JSON.parse(localStorage.getItem('currentUser')); } catch(e){}
+        loadProfile();
+        loadUserMaterials?.();
+        loadPublicMaterials();
+        showDashboard();
+    } else {
+        showHomepage();
+        loadPublicMaterials();
     }
-}
-
-// Show notification
-function showNotification(message, type = 'info') {
-    const notification = document.getElementById('notification');
-    notification.textContent = message;
-    notification.className = `notification ${type}`;
-    notification.classList.add('show');
-    
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 3000);
-}
-
-// Add some sample data on first load
-if (!localStorage.getItem('materialsLoaded')) {
-    localStorage.setItem('materialsLoaded', 'true');
-    // Materials are already defined in the global variable
-}
+});
