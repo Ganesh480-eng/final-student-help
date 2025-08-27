@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal - Study Materials</title>
+    <link rel="stylesheet" href="index.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Login Section -->
+    <div id="loginSection" class="section active">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <i class="fas fa-graduation-cap"></i>
+                    <h1>Student Portal</h1>
+                    <p>Access your study materials</p>
+                </div>
+                <form id="loginForm" class="login-form">
+                    <div class="form-group">
+                        <label for="username">
+                            <i class="fas fa-user"></i>
+                            Username
+                        </label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">
+                            <i class="fas fa-lock"></i>
+                            Password
+                        </label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="login-btn">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Login
+                    </button>
+                </form>
+                <div class="demo-credentials">
+                    <p><strong>Demo Credentials:</strong></p>
+                    <p>Username: student123</p>
+                    <p>Password: password123</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboardSection" class="section">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Student Portal</span>
+            </div>
+            <div class="nav-user">
+                <span id="userDisplay">Welcome, Student!</span>
+                <button id="logoutBtn" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </nav>
+
+        <div class="dashboard-container">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-menu">
+                    <button class="menu-item active" data-section="materials">
+                        <i class="fas fa-book"></i>
+                        Study Materials
+                    </button>
+                    <button class="menu-item" data-section="upload">
+                        <i class="fas fa-upload"></i>
+                        Upload Files
+                    </button>
+                    <button class="menu-item" data-section="profile">
+                        <i class="fas fa-user-circle"></i>
+                        Profile
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Study Materials Section -->
+                <div id="materialsSection" class="content-section active">
+                    <div class="section-header">
+                        <h2><i class="fas fa-book"></i> Study Materials</h2>
+                        <div class="filters">
+                            <select id="courseFilter">
+                                <option value="">All Courses</option>
+                                <option value="Computer Science">Computer Science</option>
+                                <option value="Mathematics">Mathematics</option>
+                                <option value="Physics">Physics</option>
+                                <option value="Chemistry">Chemistry</option>
+                            </select>
+                            <select id="yearFilter">
+                                <option value="">All Years</option>
+                                <option value="2024">2024</option>
+                                <option value="2023">2023</option>
+                                <option value="2022">2022</option>
+                            </select>
+                            <select id="semesterFilter">
+                                <option value="">All Semesters</option>
+                                <option value="1">Semester 1</option>
+                                <option value="2">Semester 2</option>
+                                <option value="3">Semester 3</option>
+                                <option value="4">Semester 4</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="materialsGrid" class="materials-grid">
+                        <!-- Materials will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Upload Section -->
+                <div id="uploadSection" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-upload"></i> Upload Study Materials</h2>
+                    </div>
+                    <div class="upload-container">
+                        <form id="uploadForm" class="upload-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="courseName">Course Name</label>
+                                    <select id="courseName" required>
+                                        <option value="">Select Course</option>
+                                        <option value="Computer Science">Computer Science</option>
+                                        <option value="Mathematics">Mathematics</option>
+                                        <option value="Physics">Physics</option>
+                                        <option value="Chemistry">Chemistry</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="year">Year</label>
+                                    <select id="year" required>
+                                        <option value="">Select Year</option>
+                                        <option value="2024">2024</option>
+                                        <option value="2023">2023</option>
+                                        <option value="2022">2022</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="semester">Semester</label>
+                                    <select id="semester" required>
+                                        <option value="">Select Semester</option>
+                                        <option value="1">Semester 1</option>
+                                        <option value="2">Semester 2</option>
+                                        <option value="3">Semester 3</option>
+                                        <option value="4">Semester 4</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="fileUpload">Select File</label>
+                                <div class="file-upload-area" id="fileUploadArea">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>Drag and drop files here or click to browse</p>
+                                    <input type="file" id="fileUpload" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt" required>
+                                </div>
+                                <div id="filePreview" class="file-preview"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="description">Description (Optional)</label>
+                                <textarea id="description" rows="3" placeholder="Brief description of the study material..."></textarea>
+                            </div>
+                            <button type="submit" class="upload-btn">
+                                <i class="fas fa-upload"></i>
+                                Upload Material
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Profile Section -->
+                <div id="profileSection" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-user-circle"></i> Student Profile</h2>
+                    </div>
+                    <div class="profile-container">
+                        <div class="profile-card">
+                            <div class="profile-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="profile-info">
+                                <h3>John Doe</h3>
+                                <p><i class="fas fa-id-card"></i> Student ID: STU2024001</p>
+                                <p><i class="fas fa-envelope"></i> john.doe@university.edu</p>
+                                <p><i class="fas fa-graduation-cap"></i> Computer Science</p>
+                                <p><i class="fas fa-calendar"></i> Year: 2024</p>
+                            </div>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <i class="fas fa-file-alt"></i>
+                                <h4>Total Materials</h4>
+                                <p id="totalMaterials">0</p>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-download"></i>
+                                <h4>Downloads</h4>
+                                <p>0</p>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-clock"></i>
+                                <h4>Last Login</h4>
+                                <p id="lastLogin">Today</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
