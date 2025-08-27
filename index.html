@@ -8,101 +8,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Public Homepage -->
-    <div id="homepageSection" class="section active">
-        <!-- Navigation -->
-        <nav class="navbar">
-            <div class="nav-brand">
+    <!-- Login Section -->
+    <div id="loginSection" class="section active">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
                     <i class="fas fa-graduation-cap"></i>
-                <span>Student Portal</span>
-            </div>
-            <div class="nav-actions">
-                <button id="loginBtn" class="login-btn-nav">
-                    <i class="fas fa-sign-in-alt"></i>
-                    Login
-                </button>
-                <button id="registerBtn" class="register-btn-nav">
-                    <i class="fas fa-user-plus"></i>
-                    Register
-                </button>
-            </div>
-        </nav>
-
-        <!-- Hero Section -->
-        <div class="hero-section">
-            <div class="hero-content">
-                <h1>Welcome to Student Portal</h1>
-                <p>Access and share study materials with your fellow students</p>
-                <div class="hero-stats">
-                    <div class="stat">
-                        <i class="fas fa-users"></i>
-                        <span>1000+ Students</span>
-                    </div>
-                    <div class="stat">
-                        <i class="fas fa-file-alt"></i>
-                        <span>5000+ Materials</span>
-                    </div>
-                    <div class="stat">
-                        <i class="fas fa-university"></i>
-                        <span>50+ Courses</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Public Study Materials Section -->
-        <div class="public-materials-section">
-            <div class="section-header">
-                <h2><i class="fas fa-book"></i> Available Study Materials</h2>
-                <p>Browse through our collection of study materials. Login to upload or download files.</p>
-                <div class="filters">
-                    <select id="publicCourseFilter">
-                        <option value="">All Courses</option>
-                        <option value="Computer Science">Computer Science</option>
-                        <option value="Mathematics">Mathematics</option>
-                        <option value="Physics">Physics</option>
-                        <option value="Chemistry">Chemistry</option>
-                    </select>
-                    <select id="publicYearFilter">
-                        <option value="">All Years</option>
-                        <option value="2024">2024</option>
-                        <option value="2023">2023</option>
-                        <option value="2022">2022</option>
-                    </select>
-                    <select id="publicSemesterFilter">
-                        <option value="">All Semesters</option>
-                        <option value="1">Semester 1</option>
-                        <option value="2">Semester 2</option>
-                        <option value="3">Semester 3</option>
-                        <option value="4">Semester 4</option>
-                    </select>
-                </div>
-            </div>
-            <div id="publicMaterialsGrid" class="materials-grid">
-                <!-- Public materials will be populated by JavaScript -->
-            </div>
-            <div class="login-prompt">
-                <div class="prompt-card">
-                    <i class="fas fa-lock"></i>
-                    <h3>Want to Upload or Download?</h3>
-                    <p>Login to access full features including file upload and download capabilities.</p>
-                    <button id="promptLoginBtn" class="prompt-btn">
-                        <i class="fas fa-sign-in-alt"></i>
-                        Login Now
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Login Modal -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-sign-in-alt"></i> Login</h2>
-                <button class="close-btn" id="closeLoginModal">
-                    <i class="fas fa-times"></i>
-                </button>
+                    <h1>Student Portal</h1>
+                    <p>Access your study materials</p>
                 </div>
                 <form id="loginForm" class="login-form">
                     <div class="form-group">
@@ -124,80 +37,16 @@
                         Login
                     </button>
                 </form>
-
-            <div class="modal-footer">
-                <p>Don't have an account? <button id="showRegisterBtn">Register here</button></p>
+                <div class="demo-credentials">
+                    <p><strong>Demo Credentials:</strong></p>
+                    <p>Username: student123</p>
+                    <p>Password: password123</p>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Register Modal -->
-    <div id="registerModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-user-plus"></i> Register</h2>
-                <button class="close-btn" id="closeRegisterModal">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <form id="registerForm" class="register-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="regUsername">Username</label>
-                        <input type="text" id="regUsername" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="regPassword">Password</label>
-                        <input type="password" id="regPassword" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="regName">Full Name</label>
-                        <input type="text" id="regName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="regStudentId">Student ID</label>
-                        <input type="text" id="regStudentId" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="regEmail">Email</label>
-                        <input type="email" id="regEmail" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="regCourse">Course</label>
-                        <select id="regCourse" required>
-                            <option value="">Select Course</option>
-                            <option value="Computer Science">Computer Science</option>
-                            <option value="Mathematics">Mathematics</option>
-                            <option value="Physics">Physics</option>
-                            <option value="Chemistry">Chemistry</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="regYear">Year</label>
-                    <select id="regYear" required>
-                        <option value="">Select Year</option>
-                        <option value="2024">2024</option>
-                        <option value="2023">2023</option>
-                        <option value="2022">2022</option>
-                    </select>
-                </div>
-                <button type="submit" class="register-btn">
-                    <i class="fas fa-user-plus"></i>
-                    Register
-                </button>
-            </form>
-            <div class="modal-footer">
-                <p>Already have an account? <button id="showLoginBtn">Login here</button></p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Dashboard (After Login) -->
+    <!-- Main Dashboard -->
     <div id="dashboardSection" class="section">
         <nav class="navbar">
             <div class="nav-brand">
@@ -219,7 +68,7 @@
                 <div class="sidebar-menu">
                     <button class="menu-item active" data-section="materials">
                         <i class="fas fa-book"></i>
-                        My Materials
+                        Study Materials
                     </button>
                     <button class="menu-item" data-section="upload">
                         <i class="fas fa-upload"></i>
@@ -237,7 +86,7 @@
                 <!-- Study Materials Section -->
                 <div id="materialsSection" class="content-section active">
                     <div class="section-header">
-                        <h2><i class="fas fa-book"></i> My Study Materials</h2>
+                        <h2><i class="fas fa-book"></i> Study Materials</h2>
                         <div class="filters">
                             <select id="courseFilter">
                                 <option value="">All Courses</option>
